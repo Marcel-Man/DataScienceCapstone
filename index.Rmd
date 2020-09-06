@@ -1,0 +1,89 @@
+---
+title: "Data Science Capstone Project"
+author: "Marcel Man"
+date: "2020/9/6"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+  # set system environment to English for display consistency
+  Sys.setenv("LANGUAGE"="En")
+  Sys.setlocale("LC_ALL", "English")
+
+```
+
+## Donwloading data
+
+```{r cache=TRUE}
+download.file("https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip", destfile = "Coursera-SwiftKey.zip")
+unzip("Coursera-SwiftKey.zip")
+```
+
+
+
+## Quiz 1
+```{r}
+con <- file("final/en_US/en_US.twitter.txt", "r") 
+lines <- readLines(con, 100)
+maxLen_Twitter <- 0
+lines_read <- 100
+love_count <- 0
+hate_count <- 0
+exact_match_count <- 0
+while (length(lines) > 0) {
+  maxLen_Twitter <- max(maxLen_Twitter, max(sapply(lines, nchar)))
+  love_count <- love_count + sum(grepl("love", lines))
+  hate_count <- hate_count + sum(grepl("hate", lines))
+  if (sum(grepl("biostats", lines)) > 0) {
+    biostats_line <- lines[grepl("biostats", lines)]
+  }
+  exact_match_count <- exact_match_count + sum(grepl("A computer once beat me at chess, but it was no match for me at kickboxing", lines))
+  lines <- readLines(con, 100)
+  lines_read <- lines_read + 100
+  
+}
+close(con)
+
+con <- file("final/en_US/en_US.blogs.txt", "r") 
+lines <- readLines(con, 100)
+maxLen_Twitter <- 0
+lines_read <- 100
+while (length(lines) > 0) {
+  maxLen_Twitter <- max(maxLen_Twitter, max(sapply(lines, nchar)))
+  lines <- readLines(con, 100)
+  lines_read <- lines_read + 100
+}
+close(con)
+
+con <- file("final/en_US/en_US.news.txt", "r") 
+lines <- readLines(con, 100)
+maxLen_Twitter <- 0
+lines_read <- 100
+while (length(lines) > 0) {
+  maxLen_Twitter <- max(maxLen_Twitter, max(sapply(lines, nchar)))
+  lines <- readLines(con, 100)
+  lines_read <- lines_read + 100
+}
+close(con)
+
+```
+
+## Week 2
+```{r}
+# Count frequency of words
+df %>% unnest_tokens("word", lines) %>% count(word) %>% arrange(desc(n))
+
+```
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
