@@ -20,6 +20,148 @@ download.file("https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Courser
 unzip("Coursera-SwiftKey.zip")
 ```
 
+## Data sampling
+
+First, we print out some information of the raw sample files. The file sizes, line counts and word counts are:
+
+```{r}
+file <- "final/en_US/en_US.twitter.txt"
+file.info(file)$size
+length(readLines(file))
+sum(lengths(gregexpr("\\W+", readLines(file))) + 1)
+
+file <- "final/en_US/en_US.blogs.txt"
+file.info(file)$size
+length(readLines(file))
+sum(lengths(gregexpr("\\W+", readLines(file))) + 1)
+
+file <- "final/en_US/en_US.news.txt"
+file.info(file)$size
+length(readLines(file))
+sum(lengths(gregexpr("\\W+", readLines(file))) + 1)
+```
+
+## Data sampling
+Because the input files are prohibitively large, we would therefore reduce their size by taking samples from them. We intend to take 1 percent of the files, and output them to separate files for further processing.
+
+```{r}
+genSampleFile <- function(sourceFile, destFile) {
+  conR <- file(sourceFile, "r")
+  conW <- file(destFile, "w")
+  lines <- readLines(conR, 100)
+  while (length(lines) > 0) {
+    writeLines(lines[1], conW)
+    lines <- readLines(conR, 100)
+  }
+  close(conR)
+  close(conW)
+}
+
+genSampleFile("final/en_US/en_US.twitter.txt", "final/en_US/en_US.twitter.sample.txt")
+genSampleFile("final/en_US/en_US.blogs.txt", "final/en_US/en_US.blogs.sample.txt")
+genSampleFile("final/en_US/en_US.news.txt", "final/en_US/en_US.news.sample.txt")
+```
+
+We confirm again the file sizes, number of lines and word counts of the sample files below.
+
+```{r}
+file <- "final/en_US/en_US.twitter.sample.txt"
+file.info(file)$size
+length(readLines(file))
+sum(lengths(gregexpr("\\W+", readLines(file))) + 1)
+
+file <- "final/en_US/en_US.blogs.sample.txt"
+file.info(file)$size
+length(readLines(file))
+sum(lengths(gregexpr("\\W+", readLines(file))) + 1)
+
+file <- "final/en_US/en_US.news.sample.txt"
+file.info(file)$size
+length(readLines(file))
+sum(lengths(gregexpr("\\W+", readLines(file))) + 1)
+```
+
+## Data Pre-processing
+The data cleanup process 
+
+```{r}
+con <- file("final/en_US/en_US.twitter.sample.txt", "r")
+linesTwit <- readLines(con)
+close(con)
+
+con <- file("final/en_US/en_US.blogs.sample.txt", "r")
+linesBlogs <- readLines(con)
+close(con)
+
+con <- file("final/en_US/en_US.news.sample.txt", "r")
+linesNews <- readLines(con)
+close(con)
+
+linesAll <- iconv(c(linesTwit, linesBlogs, linesNews), to="ASCII", sub="")
+c <- Corpus(VectorSource(linesAll), readerControl=list(readPlain, language="en", load=TRUE))
+```
+
+Next, we apply a series of pre-processing steps to the corpus. In particular, we will perform the following steps
+
+- Remove numbers
+- Remove punctuation marks
+- Convert the text to lowercase
+- Remove stopwords
+- Remove extra whitespaces
+
+```{r}
+c <- tm_map(c, removeNumbers)
+c <- tm_map(c, removePunctuation)
+c <- tm_map(c, content_transformer(tolower))
+c <- tm_map(c, removeWords, c("the", "and", stopwords("english")))
+c <- tm_map(c, stripWhitespace)
+```
+
+
+DTM <- DocumentTermMatrix(c)
+DTM <- removeSparseTerms(DTM, 0.99)
+
+DF <- tidy(DTM)
+DF %>% group_by(term) %>% summarize(count) %>% arrange(desc(count))
+sum(DF[DF$term=='dixon',])
+
+
+
+DTM <- DocumentTermMatrix(c, control = list(wordLengths = c(2, Inf)))
+
+
+dtm.matrix <- as.matrix(DTM)
+wordcount <- colSums(dtm.matrix)
+topten <- head(sort(wordcount, decreasing=TRUE), 10)
+
+library(reshape2)
+library(ggplot2)
+
+dfplot <- as.data.frame(melt(topten))
+dfplot$word <- dimnames(dfplot)[[1]]
+dfplot$word <- factor(dfplot$word,
+                      levels=dfplot$word[order(dfplot$value,
+                                               decreasing=TRUE)])
+
+fig <- ggplot(dfplot, aes(x=word, y=value)) + geom_bar(stat="identity")
+fig <- fig + xlab("Word in Corpus")
+fig <- fig + ylab("Count")
+print(fig)
+
+
+
+[1]  btw thanks rt gonna dc anytime soon love see way way long                   
+[2] hahahahhahah u just made day d                                               
+[3]  actually saw police officer horseback galloping downtown                    
+[4] started today meditation double iced espresso think found magic morning combo
+[5] now everyone graduated im never never land                                   
+
+
+
+
+
+
+
 
 
 ## Quiz 1
